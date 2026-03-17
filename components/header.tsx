@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { Menu, X, Instagram } from "lucide-react"
 import { CartButton } from "@/components/cart-button"
 
@@ -15,24 +14,13 @@ export function Header() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <Image
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Sin%20ti%CC%81tulo-1-20TqiUaslWeUc0vmsd95Pj8F6JJ0DV.png"
-              alt="VELMOR"
-              width={120}
-              height={35}
-              style={{ width: '100%', maxWidth: '100px', height: 'auto' }}
-              className="sm:max-w-[120px]"
-              priority
-            />
+            <span className="font-serif text-xl sm:text-2xl font-bold tracking-widest text-[#08083b]">
+              VELMOR
+            </span>
           </Link>
 
-          {/* Amor y Valor - Desktop only */}
-          <p className="hidden lg:block font-serif italic text-primary/60 text-sm absolute left-1/2 -translate-x-1/2">
-            Amor y Valor
-          </p>
-
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+          <nav className="hidden md:flex items-center gap-8 lg:gap-10">
             <Link 
               href="/#productos" 
               className="text-xs sm:text-sm font-medium tracking-wider uppercase text-foreground/80 hover:text-foreground transition-colors"
@@ -129,9 +117,7 @@ export function Header() {
               <Instagram className="w-4 h-4" />
               @velmor.in
             </Link>
-            <p className="font-serif italic text-accent/80 text-sm pt-2 border-t border-border mt-2">
-              Amor y Valor
-            </p>
+
           </nav>
         )}
       </div>

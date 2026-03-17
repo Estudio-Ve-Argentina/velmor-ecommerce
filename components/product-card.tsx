@@ -19,13 +19,13 @@ export function ProductCard({ product }: ProductCardProps) {
     e.preventDefault()
     e.stopPropagation()
     addItem({
-      id: `${product.id}-${defaultVariant.id}`,
-      productId: product.id,
-      variantId: defaultVariant.id,
+      productId: Number(product.id),
+      variantId: Number(defaultVariant.id),
       name: product.name,
-      variant: defaultVariant.name,
+      variantName: defaultVariant.color,
       price: defaultVariant.price,
-      image: product.images[0],
+      image: product.images[0] || null,
+      maxStock: defaultVariant.stock,
       quantity: 1,
     })
   }
@@ -77,11 +77,13 @@ export function ProductCard({ product }: ProductCardProps) {
               <Button 
                 variant="outline"
                 className="bg-background/90 border-primary/20 hover:bg-background h-9 sm:h-10 w-9 sm:w-10 p-0"
-                asChild
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  window.location.href = `/productos/${product.slug}`
+                }}
               >
-                <Link href={`/productos/${product.slug}`}>
-                  <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-                </Link>
+                <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </div>
           </div>
@@ -107,9 +109,9 @@ export function ProductCard({ product }: ProductCardProps) {
           <span className="text-sm sm:text-base font-medium text-foreground">
             ${defaultVariant.price.toLocaleString('es-AR')}
           </span>
-          {defaultVariant.compareAtPrice && (
+          {product.compareAtPrice && (
             <span className="text-xs sm:text-sm text-muted-foreground line-through">
-              ${defaultVariant.compareAtPrice.toLocaleString('es-AR')}
+              ${product.compareAtPrice.toLocaleString('es-AR')}
             </span>
           )}
         </div>
@@ -126,7 +128,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   key={v.id}
                   className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border border-border"
                   style={{ backgroundColor: v.color || '#08083b' }}
-                  title={v.name}
+                  title={v.color}
                 />
               ))}
               {product.variants.length > 4 && (

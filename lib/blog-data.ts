@@ -149,6 +149,10 @@ Cada producto VELMOR lleva una promesa: si lo cuidas, te acompañará por décad
   },
 ];
 
+export function getCategories(): string[] {
+  return [...new Set(blogPosts.map(p => p.category))];
+}
+
 export function getBlogPostBySlug(slug: string): BlogPost | undefined {
   return blogPosts.find(p => p.slug === slug);
 }

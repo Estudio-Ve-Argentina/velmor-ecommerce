@@ -205,6 +205,10 @@ export const products: Product[] = [
   },
 ];
 
+export function getCategories(): string[] {
+  return [...new Set(products.map(p => p.category))];
+}
+
 export function getProductBySlug(slug: string): Product | undefined {
   return products.find(p => p.slug === slug);
 }
