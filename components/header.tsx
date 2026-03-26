@@ -46,6 +46,12 @@ export function Header() {
               FAQ
             </Link>
             <Link 
+              href="/#footer" 
+              className="text-xs sm:text-sm font-medium tracking-wider uppercase text-foreground/80 hover:text-foreground transition-colors"
+            >
+              Contacto
+            </Link>
+            <Link 
               href="https://www.instagram.com/velmor.in/" 
               target="_blank"
               rel="noopener noreferrer"
@@ -102,7 +108,7 @@ export function Header() {
               Preguntas Frecuentes
             </Link>
             <Link 
-              href="/contacto" 
+              href="/#contacto" 
               className="text-sm font-medium tracking-wider uppercase text-foreground/80 hover:text-foreground transition-colors py-1"
               onClick={() => setIsMenuOpen(false)}
             >

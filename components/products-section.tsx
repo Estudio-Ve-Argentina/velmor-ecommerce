@@ -1,5 +1,3 @@
-"use client"
-
 import { PaperTexture } from "@/components/paper-texture"
 import { ProductsGrid } from "@/components/products-grid"
 

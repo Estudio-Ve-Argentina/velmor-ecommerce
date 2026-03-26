@@ -54,7 +54,7 @@ export interface WikiNote {
 
 async function isAuthenticated() {
   const cookieStore = await cookies();
-  return cookieStore.get("admin_session")?.value === "authenticated";
+  return cookieStore.get("admin_session")?.value === process.env.ADMIN_PASSWORD;
 }
 
 export async function GET() {

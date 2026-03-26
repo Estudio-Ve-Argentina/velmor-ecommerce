@@ -10,6 +10,7 @@ export function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQuantity, getTotalPrice, clearCart } =
     useCartStore();
   const [mounted, setMounted] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -40,17 +41,32 @@ export function CartDrawer() {
 
   if (!mounted) return null;
 
-  const storeUrl = process.env.NEXT_PUBLIC_TIENDANUBE_STORE_URL || "https://velmor.mitiendanube.com";
-  
-  // Build checkout URL with all items - Tienda Nube format
-  const buildCheckoutUrl = () => {
-    if (items.length === 0) return storeUrl;
-    
-    // Tienda Nube multi-item checkout format: /checkout/add?items=variantId:qty,variantId:qty
-    const itemsParam = items
-      .map((item) => `${item.variantId}:${item.quantity}`)
-      .join(",");
-    return `${storeUrl}/checkout/add?items=${itemsParam}`;
+  const handleCheckout = async () => {
+    if (items.length === 0) return;
+    setIsCheckingOut(true);
+    try {
+      const res = await fetch("/api/tiendanube/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((item) => ({
+            variantId: item.variantId,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.checkoutUrl) {
+        window.open(data.checkoutUrl, "_blank");
+      } else {
+        // Fallback: open store directly
+        window.open(process.env.NEXT_PUBLIC_TIENDANUBE_STORE_URL || "https://velmor.mitiendanube.com", "_blank");
+      }
+    } catch {
+      window.open(process.env.NEXT_PUBLIC_TIENDANUBE_STORE_URL || "https://velmor.mitiendanube.com", "_blank");
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   const formatPrice = (price: number) => {
@@ -120,9 +136,9 @@ export function CartDrawer() {
             ) : (
               <div className="space-y-4 sm:space-y-6">
                 {items.map((item) => (
-                  <div key={item.variantId || item.id} className="flex gap-3 sm:gap-4">
+                  <div key={item.variantId} className="flex gap-3 sm:gap-4">
                     {/* Product Image */}
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 relative bg-secondary overflow-hidden flex-shrink-0">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 relative bg-secondary overflow-hidden shrink-0">
                       {item.image ? (
                         <Image
                           src={item.image}
@@ -142,9 +158,9 @@ export function CartDrawer() {
                       <h3 className="font-medium text-xs sm:text-sm line-clamp-1">
                         {item.name}
                       </h3>
-                      {(item.variantName || item.variant) && (
+                      {item.variantName && (
                         <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
-                          {item.variantName || item.variant}
+                          {item.variantName}
                         </p>
                       )}
                       <p className="font-semibold text-xs sm:text-sm mt-1">
@@ -155,7 +171,7 @@ export function CartDrawer() {
                       <div className="flex items-center gap-1 sm:gap-2 mt-2">
                         <button
                           onClick={() =>
-                            updateQuantity(item.variantId || item.id, item.quantity - 1)
+                            updateQuantity(item.variantId, item.quantity - 1)
                           }
                           className="w-6 h-6 sm:w-7 sm:h-7 border border-border flex items-center justify-center hover:bg-secondary transition-colors"
                           aria-label="Reducir cantidad"
@@ -167,7 +183,7 @@ export function CartDrawer() {
                         </span>
                         <button
                           onClick={() =>
-                            updateQuantity(item.variantId || item.id, item.quantity + 1)
+                            updateQuantity(item.variantId, item.quantity + 1)
                           }
                           disabled={
                             item.maxStock !== undefined &&
@@ -180,7 +196,7 @@ export function CartDrawer() {
                           <Plus className="w-3 h-3" />
                         </button>
                         <button
-                          onClick={() => removeItem(item.variantId || item.id)}
+                          onClick={() => removeItem(item.variantId)}
                           className="ml-auto p-1 sm:p-1.5 text-muted-foreground hover:text-destructive transition-colors"
                           aria-label="Eliminar producto"
                         >
@@ -207,13 +223,12 @@ export function CartDrawer() {
                 Envio e impuestos calculados en el checkout de Tienda Nube
               </p>
               <Button
-                asChild
+                onClick={handleCheckout}
+                disabled={isCheckingOut}
                 className="w-full h-11 sm:h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-medium tracking-wider uppercase text-xs sm:text-sm"
               >
-                <a href={buildCheckoutUrl()} target="_blank" rel="noopener noreferrer">
-                  Finalizar Compra
-                  <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 ml-2" />
-                </a>
+                {isCheckingOut ? "Redirigiendo..." : "Finalizar Compra"}
+                {!isCheckingOut && <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 ml-2" />}
               </Button>
               <button
                 onClick={clearCart}

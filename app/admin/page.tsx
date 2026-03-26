@@ -38,7 +38,7 @@ import { formatPrice } from "@/lib/tiendanube";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Tab = "dashboard" | "orders" | "stock" | "finance" | "campaigns" | "wiki";
+type Tab = "dashboard" | "orders" | "stock" | "finance" | "campaigns" | "wiki" | "blogs";
 
 interface StockVariant {
   id: number;
@@ -180,7 +180,7 @@ function StatCard({
   };
   return (
     <div className="bg-card border border-border rounded-lg p-5 flex items-center gap-4">
-      <div className={`p-2 rounded-lg flex-shrink-0 ${colorMap[color] || colorMap.primary}`}>
+      <div className={`p-2 rounded-lg shrink-0 ${colorMap[color] || colorMap.primary}`}>
         {icon}
       </div>
       <div className="min-w-0">
@@ -263,6 +263,22 @@ export default function AdminPage() {
     content: "",
   });
 
+  // Blog state
+  const [isEditingBlog, setIsEditingBlog] = useState(false);
+  const [originalBlogSlug, setOriginalBlogSlug] = useState("");
+  const [blogForm, setBlogForm] = useState({
+    slug: "",
+    title: "",
+    excerpt: "",
+    content: "",
+    image: "",
+    category: "General",
+    author: "Equipo VELMOR",
+    date: new Date().toISOString().split("T")[0],
+    status: "draft",
+    readTime: "5 min",
+  });
+
   // ── Auth ──────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -288,6 +304,11 @@ export default function AdminPage() {
 
   const { data: adminData, mutate: refreshAdmin } = useSWR<AdminData>(
     isAuthenticated ? "/api/admin/data" : null,
+    fetcher
+  );
+
+  const { data: blogsData, mutate: refreshBlogs } = useSWR<{ success: boolean; posts: any[] }>(
+    isAuthenticated ? "/api/admin/blogs" : null,
     fetcher
   );
 
@@ -317,6 +338,8 @@ export default function AdminPage() {
   const lowStockProducts = products.filter((p) =>
     p.variants.some((v) => v.stock_management && v.stock !== null && v.stock <= 5)
   );
+
+  const blogsList = blogsData?.posts || [];
 
   // ── Auth handlers ─────────────────────────────────────────────────────────
 
@@ -465,6 +488,87 @@ export default function AdminPage() {
     refreshAdmin();
   };
 
+  // ── Blog handlers ───────────────────────────────────────────────────────
+
+  const openBlogEditor = async (slug?: string) => {
+    if (slug) {
+      const res = await fetch(`/api/admin/blogs/${slug}`);
+      const data = await res.json();
+      if (data.success && data.post) {
+        setOriginalBlogSlug(slug);
+        setBlogForm({
+          slug: data.post.slug,
+          title: data.post.frontmatter.title || "",
+          excerpt: data.post.frontmatter.excerpt || "",
+          content: data.post.content || "",
+          image: data.post.frontmatter.image || "",
+          category: data.post.frontmatter.category || "General",
+          author: data.post.frontmatter.author || "Equipo VELMOR",
+          date: data.post.frontmatter.date || new Date().toISOString().split("T")[0],
+          status: data.post.frontmatter.status || "draft",
+          readTime: data.post.frontmatter.readTime || "5 min",
+        });
+        setIsEditingBlog(true);
+      }
+    } else {
+      setOriginalBlogSlug("");
+      setBlogForm({
+        slug: "",
+        title: "",
+        excerpt: "",
+        content: "",
+        image: "",
+        category: "General",
+        author: "Equipo VELMOR",
+        date: new Date().toISOString().split("T")[0],
+        status: "draft",
+        readTime: "5 min",
+      });
+      setIsEditingBlog(true);
+    }
+  };
+
+  const saveBlog = async () => {
+    if (!blogForm.slug || !blogForm.title) return window.alert("Slug y Título son requeridos.");
+    
+    // Si cambiaste el slug, puede que queramos borrar el anterior si editamos.
+    // Lo simplificaremos asumiendo que el slug en el form es el nuevo y el anterior se preserva en `originalBlogSlug`.
+    if (originalBlogSlug && originalBlogSlug !== blogForm.slug) {
+      await fetch(`/api/admin/blogs/${originalBlogSlug}`, { method: "DELETE" });
+    }
+
+    const res = await fetch("/api/admin/blogs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug: blogForm.slug,
+        content: blogForm.content,
+        frontmatter: {
+          title: blogForm.title,
+          excerpt: blogForm.excerpt,
+          image: blogForm.image,
+          category: blogForm.category,
+          author: blogForm.author,
+          date: blogForm.date,
+          status: blogForm.status,
+          readTime: blogForm.readTime,
+        }
+      }),
+    });
+    if (res.ok) {
+      setIsEditingBlog(false);
+      refreshBlogs();
+    } else {
+      window.alert("Error al guardar el artículo");
+    }
+  };
+
+  const deleteBlog = async (slug: string) => {
+    if (!window.confirm("¿Seguro que deseas eliminar este artículo?")) return;
+    await fetch(`/api/admin/blogs/${slug}`, { method: "DELETE" });
+    refreshBlogs();
+  };
+
   // ── Render: Loading ───────────────────────────────────────────────────────
 
   if (isAuthenticated === null) {
@@ -519,6 +623,7 @@ export default function AdminPage() {
     { id: "finance", label: "Finanzas", icon: <DollarSign className="w-4 h-4" /> },
     { id: "campaigns", label: "Campañas", icon: <Megaphone className="w-4 h-4" /> },
     { id: "wiki", label: "Wiki", icon: <BookOpen className="w-4 h-4" /> },
+    { id: "blogs", label: "Blog", icon: <Edit3 className="w-4 h-4" /> },
   ];
 
   // ── Render: Dashboard ─────────────────────────────────────────────────────
@@ -718,7 +823,7 @@ export default function AdminPage() {
 
             {lowStockProducts.length > 0 && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                 <p className="text-sm text-red-700">
                   <span className="font-semibold">{lowStockProducts.length} producto{lowStockProducts.length > 1 ? "s" : ""}</span> con stock critico (&le;5 unidades)
                 </p>
@@ -742,7 +847,7 @@ export default function AdminPage() {
                           onClick={() => toggleProduct(product.id)}
                           className="w-full p-4 flex items-center gap-4 hover:bg-secondary/40 transition-colors text-left"
                         >
-                          <div className="w-11 h-11 bg-secondary rounded overflow-hidden flex-shrink-0">
+                          <div className="w-11 h-11 bg-secondary rounded overflow-hidden shrink-0">
                             {product.image && (
                               <Image src={product.image} alt={product.name} width={44} height={44} className="object-cover w-full h-full" />
                             )}
@@ -846,7 +951,7 @@ export default function AdminPage() {
 
                     return (
                       <div key={product.id} className="p-4 flex items-center gap-4 flex-wrap">
-                        <div className="w-10 h-10 bg-secondary rounded overflow-hidden flex-shrink-0">
+                        <div className="w-10 h-10 bg-secondary rounded overflow-hidden shrink-0">
                           {product.image && <Image src={product.image} alt={product.name} width={40} height={40} className="object-cover w-full h-full" />}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1025,6 +1130,149 @@ export default function AdminPage() {
                     <p className="text-xs text-muted-foreground mt-3">Actualizado: {new Date(note.updatedAt).toLocaleDateString("es-AR")}</p>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── BLOGS ────────────────────────────────────────────────────── */}
+        {activeTab === "blogs" && (
+          <div>
+            {!isEditingBlog ? (
+              <>
+                <SectionHeader
+                  title="Gestor de Artículos (Blog)"
+                  action={
+                    <Button size="sm" onClick={() => openBlogEditor()}>
+                      <PlusCircle className="w-4 h-4 mr-1" />
+                      Nuevo Artículo
+                    </Button>
+                  }
+                />
+                {blogsList.length === 0 ? (
+                  <div className="bg-card border border-border rounded-lg py-16 text-center text-muted-foreground">
+                    <Edit3 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No hay artículos en el blog</p>
+                    <p className="text-xs mt-1">Crea tu primer post para conectar con tu audiencia</p>
+                  </div>
+                ) : (
+                  <div className="bg-card border border-border rounded-lg overflow-hidden">
+                    <div className="divide-y divide-border">
+                      {blogsList.map((post) => (
+                        <div key={post.slug} className="p-4 flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-4">
+                            {post.image ? (
+                              <Image src={post.image} alt={post.title} width={60} height={45} className="object-cover rounded bg-secondary" />
+                            ) : (
+                              <div className="w-[60px] h-[45px] bg-secondary rounded flex items-center justify-center text-muted-foreground text-xs">IMG</div>
+                            )}
+                            <div>
+                              <h3 className="font-medium text-sm text-foreground">{post.title}</h3>
+                              <p className="text-xs text-muted-foreground mt-0.5">{post.category} · {post.date} · {post.status}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => openBlogEditor(post.slug)}>Editar</Button>
+                            <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteBlog(post.slug)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setIsEditingBlog(false)} className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-secondary">
+                      <ChevronDown className="w-4 h-4 rotate-90" />
+                    </button>
+                    <h2 className="font-serif text-2xl font-semibold">
+                      {originalBlogSlug ? "Editar Artículo" : "Nuevo Artículo"}
+                    </h2>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setIsEditingBlog(false)}>Descartar</Button>
+                    <Button onClick={saveBlog}><Save className="w-4 h-4 mr-2" /> Guardar</Button>
+                  </div>
+                </div>
+
+                <div className="grid lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-card border border-border rounded-lg p-6">
+                      <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Título</label>
+                      <Input value={blogForm.title} onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })} className="text-lg font-serif mb-4" placeholder="Ej: Nueva Colección de Otoño" />
+                      
+                      <label className="text-xs font-semibold uppercase tracking-wider mb-2 block mt-4">Contenido (MDX / Markdown)</label>
+                      <textarea
+                        value={blogForm.content}
+                        onChange={(e) => setBlogForm({ ...blogForm, content: e.target.value })}
+                        placeholder="Usa Markdown para darle formato a tu post..."
+                        className="w-full min-h-[400px] border border-border rounded-lg p-4 font-mono text-sm bg-background resize-y"
+                      />
+                    </div>
+                    
+                    <div className="bg-card border border-border rounded-lg p-6">
+                      <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">SEO: URL / Slug</label>
+                      <Input value={blogForm.slug} onChange={(e) => setBlogForm({ ...blogForm, slug: e.target.value })} placeholder="nueva-coleccion-de-otono" className="mb-4" />
+                      
+                      <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">SEO: Resumen (Meta Description)</label>
+                      <textarea
+                        value={blogForm.excerpt}
+                        onChange={(e) => setBlogForm({ ...blogForm, excerpt: e.target.value })}
+                        placeholder="Breve descripción para SEO y para la tarjeta del blog en la portada..."
+                        className="w-full h-24 border border-border rounded-lg p-3 text-sm bg-background resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="bg-card border border-border rounded-lg p-6">
+                      <h3 className="font-semibold mb-4 border-b border-border pb-2">Organización</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-xs text-muted-foreground uppercase mb-1 block">Estado</label>
+                          <select value={blogForm.status} onChange={(e) => setBlogForm({ ...blogForm, status: e.target.value })} className="w-full h-10 border border-border rounded px-3 text-sm bg-background">
+                            <option value="draft">Borrador</option>
+                            <option value="published">Publicado</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground uppercase mb-1 block">Categoría</label>
+                          <Input value={blogForm.category} onChange={(e) => setBlogForm({ ...blogForm, category: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground uppercase mb-1 block">Autor</label>
+                          <Input value={blogForm.author} onChange={(e) => setBlogForm({ ...blogForm, author: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground uppercase mb-1 block">Fecha de Publicación</label>
+                          <Input type="date" value={blogForm.date} onChange={(e) => setBlogForm({ ...blogForm, date: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground uppercase mb-1 block">Tiempo de lectura estimado</label>
+                          <Input value={blogForm.readTime} onChange={(e) => setBlogForm({ ...blogForm, readTime: e.target.value })} placeholder="Ej: 5 min" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-card border border-border rounded-lg p-6">
+                      <h3 className="font-semibold mb-4 border-b border-border pb-2">Imagen Destacada</h3>
+                      <div>
+                        <label className="text-xs text-muted-foreground uppercase mb-2 block">URL de la imagen</label>
+                        <Input value={blogForm.image} onChange={(e) => setBlogForm({ ...blogForm, image: e.target.value })} placeholder="https://..." className="mb-4" />
+                        {blogForm.image && (
+                          <div className="relative aspect-video w-full rounded overflow-hidden border border-border">
+                            <Image src={blogForm.image} alt="Preview" fill className="object-cover" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

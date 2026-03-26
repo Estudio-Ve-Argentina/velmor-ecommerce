@@ -2,10 +2,10 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Calendar, Clock } from "lucide-react"
 import { PaperTexture } from "@/components/paper-texture"
-import { blogPosts } from "@/lib/blog-data"
+import { getRecentPosts } from "@/lib/blog-data"
 
-export function BlogSection() {
-  const displayPosts = blogPosts.slice(0, 3)
+export async function BlogSection() {
+  const displayPosts = await getRecentPosts(3)
 
   return (
     <section id="blog" className="relative py-16 sm:py-24">
@@ -36,7 +36,7 @@ export function BlogSection() {
             >
               <article className="bg-card border border-border/50 hover:border-accent/50 transition-all duration-500 overflow-hidden h-full">
                 {/* Post Image */}
-                <div className="relative aspect-[4/3] overflow-hidden">
+                <div className="relative aspect-4/3 overflow-hidden">
                   <Image
                     src={post.image}
                     alt={post.title}

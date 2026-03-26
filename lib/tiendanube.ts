@@ -1,6 +1,4 @@
 const TIENDANUBE_API_URL = "https://api.tiendanube.com/v1";
-const STORE_ID = process.env.TIENDANUBE_STORE_ID || "6293627";
-const ACCESS_TOKEN = process.env.TIENDANUBE_ACCESS_TOKEN || "abf1ab506acb2a54298dec70525e7481fbb0dea5";
 
 interface TiendaNubeImage {
   id: number;
@@ -62,12 +60,22 @@ async function tiendaNubeFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const STORE_ID = process.env.TIENDANUBE_STORE_ID;
+  const ACCESS_TOKEN = process.env.TIENDANUBE_ACCESS_TOKEN;
+
+  if (!STORE_ID || !ACCESS_TOKEN) {
+    throw new Error(
+      "Missing Tienda Nube credentials. Set TIENDANUBE_STORE_ID and TIENDANUBE_ACCESS_TOKEN in .env.local.\n" +
+      "See .agents/workflows/tiendanube-setup.md for setup instructions."
+    );
+  }
+
   const url = `${TIENDANUBE_API_URL}/${STORE_ID}${endpoint}`;
 
   const response = await fetch(url, {
     ...options,
     headers: {
-      "Authorization": `bearer ${ACCESS_TOKEN}`,
+      "Authentication": `bearer ${ACCESS_TOKEN}`,
       "Content-Type": "application/json",
       "User-Agent": "VELMOR Web (contact@velmor.com)",
       ...options.headers,
@@ -163,7 +171,7 @@ export async function getCategories(): Promise<TiendaNubeCategory[]> {
 // Checkout URL generator
 export function getCheckoutUrl(variantId: number, quantity: number = 1): string {
   const storeUrl = process.env.NEXT_PUBLIC_TIENDANUBE_STORE_URL || "https://velmor.mitiendanube.com";
-  return `${storeUrl}/checkout/add/${variantId}/${quantity}`;
+  return `${storeUrl}/checkout/v3/start/${variantId}/${quantity}`;
 }
 
 // Helpers

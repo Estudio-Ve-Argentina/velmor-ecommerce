@@ -5,7 +5,8 @@ import Image from "next/image"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { CartDrawer } from "@/components/cart-drawer"
-import { getPostBySlug, blogPosts } from "@/lib/blog-data"
+import { MDXRemote } from "next-mdx-remote/rsc"
+import { getPostBySlug, getAllBlogPosts } from "@/lib/blog-data"
 import { Calendar, Clock, ChevronLeft, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -14,14 +15,15 @@ interface BlogPostPageProps {
 }
 
 export async function generateStaticParams() {
-  return blogPosts.map((post) => ({
+  const allPosts = await getAllBlogPosts()
+  return allPosts.map((post) => ({
     slug: post.slug,
   }))
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params
-  const post = getPostBySlug(slug)
+  const post = await getPostBySlug(slug)
   
   if (!post) {
     return {
@@ -45,14 +47,15 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params
-  const post = getPostBySlug(slug)
+  const post = await getPostBySlug(slug)
 
   if (!post) {
     notFound()
   }
 
   // Get related posts
-  const relatedPosts = blogPosts
+  const allPosts = await getAllBlogPosts()
+  const relatedPosts = allPosts
     .filter(p => p.id !== post.id && p.category === post.category)
     .slice(0, 2)
 
@@ -94,14 +97,16 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </header>
 
           {/* Featured Image */}
-          <div className="relative aspect-[21/9] mb-8 sm:mb-12 max-w-5xl mx-auto">
-            <Image
-              src={post.image}
-              alt={post.title}
-              fill
-              className="object-cover"
-              priority
-            />
+          <div className="relative aspect-21/9 mb-8 sm:mb-12 max-w-5xl mx-auto overflow-hidden">
+            {post.image && (
+              <Image
+                src={post.image}
+                alt={post.title}
+                fill
+                className="object-cover"
+                priority
+              />
+            )}
           </div>
 
           {/* Content */}
@@ -115,8 +120,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 prose-blockquote:border-l-accent prose-blockquote:text-muted-foreground prose-blockquote:italic
                 prose-img:rounded-none
                 text-sm sm:text-base"
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
+            >
+              <MDXRemote source={post.content} />
+            </div>
 
             {/* Amor y Valor Quote */}
             <div className="my-10 sm:my-16 py-8 sm:py-12 border-t border-b border-border text-center">
@@ -149,7 +155,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 {relatedPosts.map((relatedPost) => (
                   <Link key={relatedPost.id} href={`/blog/${relatedPost.slug}`} className="group">
                     <article className="bg-card border border-border/50 hover:border-accent/30 transition-all duration-300">
-                      <div className="relative aspect-[4/3] overflow-hidden">
+                      <div className="relative aspect-4/3 overflow-hidden">
                         <Image
                           src={relatedPost.image}
                           alt={relatedPost.title}

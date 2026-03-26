@@ -4,7 +4,7 @@ import Image from "next/image"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { CartDrawer } from "@/components/cart-drawer"
-import { blogPosts, getCategories } from "@/lib/blog-data"
+import { getAllBlogPosts, getCategories } from "@/lib/blog-data"
 import { Calendar, Clock, ArrowRight } from "lucide-react"
 
 export const metadata: Metadata = {
@@ -12,9 +12,10 @@ export const metadata: Metadata = {
   description: "Descubre articulos sobre moda masculina, cuidado del cuero, tendencias y el arte detras de los accesorios premium VELMOR.",
 }
 
-export default function BlogPage() {
-  const categories = getCategories()
-  const featuredPost = blogPosts[0]
+export default async function BlogPage() {
+  const categories = await getCategories()
+  const blogPosts = await getAllBlogPosts()
+  const featuredPost = blogPosts.length > 0 ? blogPosts[0] : null
   const otherPosts = blogPosts.slice(1)
 
   return (
@@ -36,46 +37,50 @@ export default function BlogPage() {
           </div>
 
           {/* Featured Post */}
-          <Link href={`/blog/${featuredPost.slug}`} className="block group mb-12 sm:mb-16">
-            <article className="grid md:grid-cols-2 gap-6 sm:gap-8 bg-card border border-border/50 hover:border-accent/30 transition-colors">
-              <div className="relative aspect-[4/3] md:aspect-auto overflow-hidden">
-                <Image
-                  src={featuredPost.image}
-                  alt={featuredPost.title}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-                <span className="absolute top-4 left-4 bg-primary text-primary-foreground text-xs tracking-wider uppercase px-3 py-1">
-                  Destacado
-                </span>
-              </div>
-              <div className="p-6 sm:p-8 flex flex-col justify-center">
-                <p className="text-xs sm:text-sm text-accent uppercase tracking-wider mb-2 sm:mb-3">
-                  {featuredPost.category}
-                </p>
-                <h2 className="font-serif text-xl sm:text-2xl md:text-3xl text-foreground mb-3 sm:mb-4 group-hover:text-primary/80 transition-colors">
-                  {featuredPost.title}
-                </h2>
-                <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 line-clamp-3">
-                  {featuredPost.excerpt}
-                </p>
-                <div className="flex items-center gap-4 text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-                    {featuredPost.date}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                    {featuredPost.readTime}
+          {featuredPost && (
+            <Link href={`/blog/${featuredPost.slug}`} className="block group mb-12 sm:mb-16">
+              <article className="grid md:grid-cols-2 gap-6 sm:gap-8 bg-card border border-border/50 hover:border-accent/30 transition-colors">
+                <div className="relative aspect-4/3 md:aspect-auto overflow-hidden">
+                  {featuredPost.image && (
+                    <Image
+                      src={featuredPost.image}
+                      alt={featuredPost.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                  )}
+                  <span className="absolute top-4 left-4 bg-primary text-primary-foreground text-xs tracking-wider uppercase px-3 py-1">
+                    Destacado
                   </span>
                 </div>
-                <span className="inline-flex items-center text-sm font-medium text-primary group-hover:underline">
-                  Leer articulo
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </div>
-            </article>
-          </Link>
+                <div className="p-6 sm:p-8 flex flex-col justify-center">
+                  <p className="text-xs sm:text-sm text-accent uppercase tracking-wider mb-2 sm:mb-3">
+                    {featuredPost.category}
+                  </p>
+                  <h2 className="font-serif text-xl sm:text-2xl md:text-3xl text-foreground mb-3 sm:mb-4 group-hover:text-primary/80 transition-colors">
+                    {featuredPost.title}
+                  </h2>
+                  <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 line-clamp-3">
+                    {featuredPost.excerpt}
+                  </p>
+                  <div className="flex items-center gap-4 text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                      {featuredPost.date}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                      {featuredPost.readTime}
+                    </span>
+                  </div>
+                  <span className="inline-flex items-center text-sm font-medium text-primary group-hover:underline">
+                    Leer articulo
+                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </div>
+              </article>
+            </Link>
+          )}
 
           {/* Categories */}
           <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-10 sm:mb-12">
@@ -96,16 +101,18 @@ export default function BlogPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {otherPosts.map((post) => (
               <Link key={post.id} href={`/blog/${post.slug}`} className="group">
-                <article className="bg-card border border-border/50 hover:border-accent/30 transition-all duration-300">
-                  <div className="relative aspect-[4/3] overflow-hidden">
-                    <Image
-                      src={post.image}
-                      alt={post.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-700"
-                    />
+                <article className="bg-card border border-border/50 hover:border-accent/30 transition-all duration-300 h-full flex flex-col">
+                  <div className="relative aspect-4/3 overflow-hidden">
+                    {post.image && (
+                      <Image
+                        src={post.image}
+                        alt={post.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    )}
                   </div>
-                  <div className="p-4 sm:p-6">
+                  <div className="p-4 sm:p-6 flex-1 flex flex-col">
                     <p className="text-[10px] sm:text-xs text-accent uppercase tracking-wider mb-2">
                       {post.category}
                     </p>

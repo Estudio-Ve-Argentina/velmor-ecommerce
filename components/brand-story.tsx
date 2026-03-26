@@ -32,11 +32,11 @@ export function BrandStory() {
                 <p className="text-sm text-primary-foreground/60 mt-1">Cuero Genuino</p>
               </div>
               <div>
-                <p className="font-serif text-3xl text-accent">+500</p>
+                <p className="font-serif text-3xl text-accent">50</p>
                 <p className="text-sm text-primary-foreground/60 mt-1">Clientes Satisfechos</p>
               </div>
               <div>
-                <p className="font-serif text-3xl text-accent">2024</p>
+                <p className="font-serif text-3xl text-accent">2025</p>
                 <p className="text-sm text-primary-foreground/60 mt-1">Fundación</p>
               </div>
             </div>
@@ -44,7 +44,7 @@ export function BrandStory() {
 
           {/* Image */}
           <div className="relative">
-            <div className="relative aspect-[3/4] max-w-md mx-auto lg:ml-auto">
+            <div className="relative aspect-3/4 max-w-md mx-auto lg:ml-auto">
               {/* Decorative elements */}
               <div className="absolute -top-4 -right-4 w-full h-full border border-accent/30" />
               <div className="absolute -bottom-4 -left-4 w-full h-full border border-accent/30" />

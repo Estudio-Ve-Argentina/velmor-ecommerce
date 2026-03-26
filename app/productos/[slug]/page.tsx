@@ -1,45 +1,41 @@
 import { notFound } from "next/navigation"
 import { Metadata } from "next"
-import { getProductBySlug, products } from "@/lib/products-data"
+import { getProductByHandle, getProductMainImage } from "@/lib/tiendanube"
 import { ProductDetail } from "@/components/product-detail"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { CartDrawer } from "@/components/cart-drawer"
 
+export const revalidate = 60
+
 interface ProductPageProps {
   params: Promise<{ slug: string }>
 }
 
-export async function generateStaticParams() {
-  return products.map((product) => ({
-    slug: product.slug,
-  }))
-}
-
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params
-  const product = getProductBySlug(slug)
-  
+  const product = await getProductByHandle(slug)
+
   if (!product) {
-    return {
-      title: "Producto no encontrado | VELMOR",
-    }
+    return { title: "Producto no encontrado | VELMOR" }
   }
 
+  const mainImage = getProductMainImage(product)
+
   return {
-    title: `${product.name} | VELMOR`,
-    description: product.shortDescription,
+    title: `${product.name.es} | VELMOR`,
+    description: product.description?.es?.replace(/<[^>]*>/g, "").slice(0, 160) || "",
     openGraph: {
-      title: `${product.name} | VELMOR`,
-      description: product.shortDescription,
-      images: [product.images[0]],
+      title: `${product.name.es} | VELMOR`,
+      description: product.description?.es?.replace(/<[^>]*>/g, "").slice(0, 160) || "",
+      images: mainImage ? [mainImage] : [],
     },
   }
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params
-  const product = getProductBySlug(slug)
+  const product = await getProductByHandle(slug)
 
   if (!product) {
     notFound()

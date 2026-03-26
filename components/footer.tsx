@@ -20,13 +20,18 @@ export function Footer() {
 
   return (
     <footer className="bg-primary text-primary-foreground">
-      {/* Newsletter Section */}
-      <div className="border-b border-primary-foreground/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-12">
+      {/* Main Footer Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-12">
+        
+        {/* Newsletter Card */}
+        <div className="bg-accent/5 rounded-2xl p-6 sm:p-10 border border-accent/10">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
             <div className="text-center lg:text-left">
-              <h3 className="font-serif text-xl sm:text-2xl mb-2">Unite a la familia VELMOR</h3>
-              <p className="text-primary-foreground/70 text-sm sm:text-base">
+              <h3 className="font-serif text-xl sm:text-2xl mb-1 text-primary-foreground flex items-center gap-2 justify-center lg:justify-start">
+                Unite a la familia
+                <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-accent" />
+              </h3>
+              <p className="text-primary-foreground/70 text-sm">
                 Recibe novedades, ofertas exclusivas y consejos de estilo.
               </p>
             </div>
@@ -42,12 +47,12 @@ export function Footer() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Tu email"
-                  className="flex-1 bg-transparent border border-primary-foreground/30 px-4 py-2.5 sm:py-3 text-sm focus:outline-none focus:border-accent placeholder:text-primary-foreground/50"
+                  className="flex-1 bg-transparent border border-primary-foreground/30 px-4 py-2 sm:py-2.5 text-sm focus:outline-none focus:border-accent placeholder:text-primary-foreground/50 rounded-l-md"
                   required
                 />
                 <Button 
                   type="submit"
-                  className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-none px-4 sm:px-6 h-auto"
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-none rounded-r-md px-4 sm:px-6 h-auto"
                 >
                   <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
@@ -55,28 +60,26 @@ export function Footer() {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Main Footer */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12">
+        {/* Links Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12">
           {/* Brand Column */}
-          <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="inline-block mb-4 sm:mb-6">
+          <div className="md:col-span-5 lg:col-span-4">
+            <Link href="/" className="inline-block mb-4">
               <Image
                 src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Sin%20ti%CC%81tulo-1-20TqiUaslWeUc0vmsd95Pj8F6JJ0DV.png"
                 alt="VELMOR"
-                width={140}
-                height={40}
+                width={120}
+                height={34}
                 className="brightness-0 invert"
-                style={{ width: '100%', maxWidth: '120px', height: 'auto' }}
+                style={{ width: '100%', maxWidth: '110px', height: 'auto' }}
               />
             </Link>
-            <p className="font-serif italic text-accent/90 text-sm mb-4">
+            <p className="font-serif italic text-accent/90 text-sm mb-3">
               "Amor y Valor"
             </p>
-            <p className="text-primary-foreground/70 text-xs sm:text-sm leading-relaxed mb-6">
-              Elegancia que perdura. Accesorios de cuero premium.
+            <p className="text-primary-foreground/70 text-xs sm:text-sm leading-relaxed mb-6 max-w-sm">
+              Elegancia que perdura. Accesorios de cuero premium diseñados para acompañarte toda la vida.
             </p>
             
             {/* Social */}
@@ -85,165 +88,91 @@ export function Footer() {
                 href="https://www.instagram.com/velmor.in/" 
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center border border-primary-foreground/30 hover:border-accent hover:text-accent transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-primary-foreground/5 hover:bg-accent hover:text-accent-foreground transition-colors"
                 aria-label="Instagram"
               >
-                <Instagram className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Instagram className="w-4 h-4" />
               </Link>
               <Link 
                 href="mailto:contacto@velmor.com"
-                className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center border border-primary-foreground/30 hover:border-accent hover:text-accent transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-primary-foreground/5 hover:bg-accent hover:text-accent-foreground transition-colors"
                 aria-label="Email"
               >
-                <Mail className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Mail className="w-4 h-4" />
               </Link>
             </div>
           </div>
 
           {/* Shop Column */}
-          <div>
-            <h4 className="font-medium tracking-wider uppercase text-xs sm:text-sm mb-4 sm:mb-6">Tienda</h4>
-            <ul className="space-y-2 sm:space-y-3">
-              <li>
-                <Link href="/#productos" className="text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                  Todos los productos
-                </Link>
-              </li>
-              <li>
-                <Link href="/#productos" className="text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                  Billeteras
-                </Link>
-              </li>
-              <li>
-                <Link href="/#productos" className="text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                  Cinturones
-                </Link>
-              </li>
-              <li>
-                <Link href="/#productos" className="text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                  Accesorios
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                  Blog
-                </Link>
-              </li>
+          <div className="md:col-span-3 lg:col-span-2 lg:col-start-7">
+            <h4 className="font-medium tracking-wider uppercase text-xs mb-4 text-primary-foreground/90">Tienda</h4>
+            <ul className="space-y-2">
+              <li><Link href="/#productos" className="text-primary-foreground/60 hover:text-accent transition-colors text-xs">Todos los productos</Link></li>
+              <li><Link href="/#productos" className="text-primary-foreground/60 hover:text-accent transition-colors text-xs">Billeteras</Link></li>
+              <li><Link href="/#productos" className="text-primary-foreground/60 hover:text-accent transition-colors text-xs">Cinturones</Link></li>
+              <li><Link href="/#productos" className="text-primary-foreground/60 hover:text-accent transition-colors text-xs">Accesorios</Link></li>
+              <li><Link href="/blog" className="text-primary-foreground/60 hover:text-accent transition-colors text-xs">Blog</Link></li>
             </ul>
           </div>
 
-          {/* Info Column */}
-          <div>
-            <h4 className="font-medium tracking-wider uppercase text-xs sm:text-sm mb-4 sm:mb-6">Informacion</h4>
-            <ul className="space-y-2 sm:space-y-3">
-              <li>
-                <Link href="/#historia" className="text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                  Nuestra historia
-                </Link>
-              </li>
-              <li>
-                <Link href="/envios" className="text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                  Envios
-                </Link>
-              </li>
-              <li>
-                <Link href="/devoluciones" className="text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                  Cambios y devoluciones
-                </Link>
-              </li>
-              <li>
-                <Link href="/faq" className="text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                  Preguntas frecuentes
-                </Link>
-              </li>
-              <li>
-                <Link href="/contacto" className="text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                  Contacto
-                </Link>
-              </li>
+          {/* Info & Contact Column */}
+      <div className="md:col-span-4 lg:col-span-3" id="contacto">
+            <h4 className="font-medium tracking-wider uppercase text-xs mb-4 text-primary-foreground/90">Ayuda y Contacto</h4>
+            <ul className="space-y-2 mb-6">
+              <li><Link href="/#historia" className="text-primary-foreground/60 hover:text-accent transition-colors text-xs">Nuestra historia</Link></li>
+              <li><Link href="/envios" className="text-primary-foreground/60 hover:text-accent transition-colors text-xs">Envíos y devoluciones</Link></li>
+              <li><Link href="/faq" className="text-primary-foreground/60 hover:text-accent transition-colors text-xs">Preguntas frecuentes</Link></li>
             </ul>
-          </div>
-
-          {/* Legal Column */}
-          <div>
-            <h4 className="font-medium tracking-wider uppercase text-xs sm:text-sm mb-4 sm:mb-6">Legal</h4>
-            <ul className="space-y-2 sm:space-y-3">
-              <li>
-                <Link href="/terminos" className="text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                  Terminos y condiciones
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacidad" className="text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                  Politica de privacidad
-                </Link>
-              </li>
-              <li>
-                <Link href="/cookies" className="text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                  Cookies
-                </Link>
-              </li>
-            </ul>
-
-            {/* Contact */}
-            <div className="mt-6 sm:mt-8 space-y-2 sm:space-y-3">
-              <a href="mailto:contacto@velmor.com" className="flex items-center gap-2 text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                <Mail className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+            <div className="space-y-2">
+              <a href="mailto:contacto@velmor.com" className="flex items-center gap-2 text-primary-foreground/60 hover:text-accent transition-colors text-xs">
+                <Mail className="w-3.5 h-3.5 shrink-0" />
                 contacto@velmor.com
               </a>
-              <a href="tel:+5491112345678" className="flex items-center gap-2 text-primary-foreground/70 hover:text-accent transition-colors text-xs sm:text-sm">
-                <Phone className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+              <a href="tel:+5491112345678" className="flex items-center gap-2 text-primary-foreground/60 hover:text-accent transition-colors text-xs">
+                <Phone className="w-3.5 h-3.5 shrink-0" />
                 +54 9 11 1234-5678
               </a>
-              <p className="flex items-center gap-2 text-primary-foreground/70 text-xs sm:text-sm">
-                <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+              <p className="flex items-center gap-2 text-primary-foreground/60 text-xs">
+                <MapPin className="w-3.5 h-3.5 shrink-0" />
                 Buenos Aires, Argentina
               </p>
             </div>
           </div>
         </div>
 
-        {/* Trust Badges */}
-        <div className="mt-10 sm:mt-12 pt-8 border-t border-primary-foreground/10">
-          <div className="flex flex-wrap justify-center gap-6 sm:gap-12 mb-8">
-            <div className="flex items-center gap-2 text-primary-foreground/70">
-              <Truck className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="text-xs sm:text-sm">Envio a todo el pais</span>
+        {/* Trust & Payment Badges (Compact) */}
+        <div className="pt-8 border-t border-primary-foreground/10 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-wrap justify-center md:justify-start gap-4 sm:gap-6">
+            <div className="flex items-center gap-1.5 text-primary-foreground/60">
+              <Truck className="w-3.5 h-3.5" />
+              <span className="text-xs">Envío a todo el país</span>
             </div>
-            <div className="flex items-center gap-2 text-primary-foreground/70">
-              <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="text-xs sm:text-sm">Compra 100% segura</span>
-            </div>
-            <div className="flex items-center gap-2 text-primary-foreground/70">
-              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="text-xs sm:text-sm">Todos los medios de pago</span>
+            <div className="flex items-center gap-1.5 text-primary-foreground/60">
+              <Shield className="w-3.5 h-3.5" />
+              <span className="text-xs">Compra segura</span>
             </div>
           </div>
 
-          {/* Payment Methods */}
-          <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-8">
-            {["Visa", "Mastercard", "AMEX", "Mercado Pago", "Transferencia"].map((method) => (
-              <span 
-                key={method}
-                className="px-2 sm:px-3 py-1 border border-primary-foreground/20 text-[10px] sm:text-xs text-primary-foreground/60"
-              >
-                {method}
-              </span>
-            ))}
+          {/* Compact Payment Methods */}
+          <div className="flex items-center gap-3 text-primary-foreground/40">
+            <CreditCard className="w-4 h-4" />
+            <span className="text-[10px] uppercase tracking-wider">Todos los medios de pago aceptados</span>
           </div>
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="border-t border-primary-foreground/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+      {/* Bottom Bar with Legal Links */}
+      <div className="border-t border-primary-foreground/5 bg-black/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-primary-foreground/50 text-[10px] sm:text-xs">
               © {new Date().getFullYear()} VELMOR. Todos los derechos reservados.
             </p>
-            <p className="font-serif italic text-accent/80 text-xs sm:text-sm">
-              Amor y Valor
-            </p>
+            <div className="flex items-center gap-4 sm:gap-6">
+              <Link href="/terminos" className="text-primary-foreground/50 hover:text-accent transition-colors text-[10px] sm:text-xs">Términos</Link>
+              <Link href="/privacidad" className="text-primary-foreground/50 hover:text-accent transition-colors text-[10px] sm:text-xs">Privacidad</Link>
+              <Link href="/cookies" className="text-primary-foreground/50 hover:text-accent transition-colors text-[10px] sm:text-xs">Cookies</Link>
+            </div>
           </div>
         </div>
       </div>
