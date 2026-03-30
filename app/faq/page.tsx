@@ -18,6 +18,10 @@ export const metadata: Metadata = {
 // Fetch FAQs from Firebase
 async function getFaqs() {
   try {
+    if (!db) {
+      console.warn("Firebase DB not initialized. Skipping FAQ fetch.");
+      return [];
+    }
     const faqsRef = collection(db, "faqs");
     const q = query(faqsRef, orderBy("order", "asc"));
     const snapshot = await getDocs(q);

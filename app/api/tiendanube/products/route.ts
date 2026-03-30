@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProducts } from "@/lib/tiendanube";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 60; // Cache for 60 seconds
 
 export async function GET(request: NextRequest) {
