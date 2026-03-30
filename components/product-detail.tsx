@@ -18,7 +18,7 @@ interface ProductDetailProps {
 
 export function ProductDetail({ product, trackView }: ProductDetailProps) {
   useRecentlyViewed(trackView ? product.id : -1)
-  const [selectedVariant, setSelectedVariant] = useState(product.variants[0])
+  const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0])
   const [selectedImage, setSelectedImage] = useState(0)
   const [api, setApi] = useState<CarouselApi>()
   const [quantity, setQuantity] = useState(1)
@@ -63,7 +63,7 @@ export function ProductDetail({ product, trackView }: ProductDetailProps) {
   }
 
   // Build sorted image list: main first
-  const images = product.images.sort((a, b) => a.position - b.position).map(img => img.src)
+  const images = [...(product.images || [])].sort((a, b) => a.position - b.position).map(img => img.src)
 
   const handleAddToCart = () => {
     if (!selectedVariant) return
