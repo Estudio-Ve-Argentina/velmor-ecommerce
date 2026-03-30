@@ -11,92 +11,31 @@ Un starter **listo para producción** para construir storefronts custom sobre cu
 | **Backend** | Cliente de API completo para Tienda Nube (productos, órdenes, stock, categorías) |
 | **Auth** | Flujo OAuth automático para obtener el access token del cliente |
 | **Productos** | Grilla con filtros por categoría, cards, página de detalle, variantes |
-| **Carrito** | Estado global persistente (Zustand), drawer lateral, checkout hacia TN |
+| **Carrito** | Estado global persistente (Zustand), drawer lateral, checkout seguro vía API (Draft Orders) |
 | **Admin** | Panel básico para ver órdenes y stock en tiempo real |
 | **SEO** | Metadata dinámica por producto desde la API |
 | **DX** | TypeScript estricto, caché ISR de 60s, recarga automática de env vars |
 
 ---
 
+## 🔒 Checkout Seguro (Draft Orders)
+
+A diferencia de los templates básicos que redirigen a URLs estáticas (propensas a errores de "Invalid URL"), este starter utiliza el flujo de **Órdenes en Borrador (Draft Orders)** de Tienda Nube:
+
+1. **Server-to-Server**: La petición se procesa en el backend (`app/api/tiendanube/checkout/route.ts`).
+2. **Seguridad**: El `ACCESS_TOKEN` nunca se expone al cliente.
+3. **Persistencia**: Se crea una orden real en estado de borrador en el panel de Tienda Nube antes de redirigir al usuario.
+4. **Redirección oficial**: Se utiliza la `checkout_url` generada dinámicamente por la API de Tienda Nube.
+
+> [!IMPORTANT]
+> **Permisos Requeridos**: Para que el checkout funcione, el Access Token de la app debe tener los scopes `write_draft_orders`, `read_draft_orders` y `write_orders`. Si recibes un error 403, revisa los permisos en tu Panel de Partners.
+
+---
+
 ## Stack
-
-- **Next.js 15** (App Router, Server Components)
-- **TypeScript**
-- **Tailwind CSS**
-- **Zustand** (carrito)
-- **Tienda Nube API v1**
-
----
-
-## 🚀 Setup para un nuevo cliente
-
-### 1. Forkear / clonar
-
-```bash
-git clone https://github.com/TU_ORG/tn-starter.git nombre-cliente
-cd nombre-cliente
-npm install
-```
-
-### 2. Configurar las variables de entorno
-
-Copiá el archivo de ejemplo:
-
-```bash
-cp .env.local.example .env.local
-```
-
-Completá con los datos de la app del cliente en el [Portal de Partners de Tienda Nube](https://partners.tiendanube.com):
-
-```env
-TIENDANUBE_CLIENT_ID="tu_app_id"
-TIENDANUBE_CLIENT_SECRET="tu_client_secret"
-TIENDANUBE_STORE_ID=""          # se completa en el paso 4
-TIENDANUBE_ACCESS_TOKEN=""      # se completa en el paso 4
-NEXT_PUBLIC_TIENDANUBE_STORE_URL="https://nombretienda.mitiendanube.com"
-```
-
-### 3. Levantar el servidor
-
-```bash
-npm run dev
-```
-
-El servidor debe estar corriendo en `http://localhost:3000` para que funcione el callback OAuth.
-
-### 4. Obtener el Access Token del cliente
-
-> ⚠️ **Importante**: el cliente debe hacer este paso logueado con SU cuenta de Tienda Nube (no la tuya de partner, no una tienda demo).
-
-1. El cliente abre esta URL en su navegador (reemplazá `CLIENT_ID`):
-   ```
-   https://www.tiendanube.com/apps/CLIENT_ID/authorize
-   ```
-2. Acepta los permisos
-3. Es redirigido a `http://localhost:3000/api/auth/callback`
-4. Una pantalla verde muestra el `access_token` y el `user_id`
-
-Copiá esos valores al `.env.local`:
-
-```env
-TIENDANUBE_STORE_ID="user_id_del_callback"
-TIENDANUBE_ACCESS_TOKEN="access_token_del_callback"
-```
-
-> El `user_id` del callback **ES** el Store ID. Son el mismo valor.
-
-No hace falta reiniciar — Next.js recarga el `.env.local` automáticamente.
-
-### 5. Verificar
-
-Abrí `http://localhost:3000` — los productos de la tienda deben aparecer.
-
----
-
-## Personalizar para el cliente
-
-Todo lo que cambia por cliente vive en estos archivos:
-
+...
+...
+...
 | Archivo | Qué customizar |
 |---------|---------------|
 | `app/globals.css` | Colores, tipografía, variables de diseño |
@@ -107,7 +46,7 @@ Todo lo que cambia por cliente vive en estos archivos:
 | `lib/blog-data.ts` | Contenido del blog (si aplica) |
 | `content/` | Textos estáticos (FAQ, historia, etc.) |
 
-El backend (API, carrito, checkout, productos) **no se toca**.
+El backend (API, carrito, productos) viene desacoplado para facilitar el mantenimiento.
 
 ---
 
@@ -122,27 +61,28 @@ app/api/tiendanube/
   products/[id]/route.ts
   orders/route.ts       ← GET /api/tiendanube/orders
   stock/route.ts        ← PUT /api/tiendanube/stock
-  checkout/route.ts     ← POST /api/tiendanube/checkout
+  checkout/route.ts     ← POST /api/tiendanube/checkout (Crea Draft Order)
 
 app/api/auth/
   callback/route.ts     ← OAuth callback — obtiene el access token
 ```
 
-### Cómo funciona la autenticación con Tienda Nube
+### Cómo funciona el Checkout Seguro
 
 ```
-Cliente Browser               Tienda Nube             Este servidor
-     │                            │                        │
-     ├──── GET /apps/ID/authorize ─►                       │
-     │                            │                        │
-     │◄── redirect /?code=xxx ────┘                        │
-     │                                                     │
-     ├──── GET /api/auth/callback?code=xxx ───────────────►│
-     │                            │                        │
-     │                            ◄── exchange code ───────┤
-     │                            ├── {access_token} ─────►│
-     │                                                     │
-     │◄── muestra access_token + user_id ─────────────────┘
+Cliente Browser               Este servidor (API)          Tienda Nube API
+      │                            │                            │
+      ├──── POST /api/.../checkout ─►                           │
+      │      (items del carrito)   │                            │
+      │                            ├──── POST /draft_orders ───►│
+      │                            │      (con Access Token)    │
+      │                            │                            │
+      │                            ◄──── { checkout_url } ──────┤
+      │                            │                            │
+      │◄─── JSON { checkoutUrl } ──┘                            │
+      │                            │                            │
+      ├──────── Redirección ───────┼───────────────────────────►│
+      │                            │                       (Checkout)
 ```
 
 > Headers: Tienda Nube usa `Authentication: bearer TOKEN` (no `Authorization`).
