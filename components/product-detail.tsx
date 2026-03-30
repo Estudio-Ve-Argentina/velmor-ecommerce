@@ -1,22 +1,43 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ShoppingBag, ChevronLeft, ChevronRight, Minus, Plus, Check, Truck, Shield, RotateCcw, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel"
 import { useCartStore } from "@/lib/cart-store"
 import { formatPrice, getProductMainImage, type TiendaNubeProduct } from "@/lib/tiendanube"
+import { useRecentlyViewed } from "@/hooks/use-recently-viewed"
+import { ProductAccordion } from "@/components/product-accordion"
 
 interface ProductDetailProps {
   product: TiendaNubeProduct
+  trackView?: boolean
 }
 
-export function ProductDetail({ product }: ProductDetailProps) {
+export function ProductDetail({ product, trackView }: ProductDetailProps) {
+  useRecentlyViewed(trackView ? product.id : -1)
   const [selectedVariant, setSelectedVariant] = useState(product.variants[0])
   const [selectedImage, setSelectedImage] = useState(0)
+  const [api, setApi] = useState<CarouselApi>()
   const [quantity, setQuantity] = useState(1)
   const addItem = useCartStore((state) => state.addItem)
+
+  useEffect(() => {
+    if (!api) return
+
+    const onSelect = () => {
+      setSelectedImage(api.selectedScrollSnap())
+    }
+
+    api.on("select", onSelect)
+    setSelectedImage(api.selectedScrollSnap())
+
+    return () => {
+      api.off("select", onSelect)
+    }
+  }, [api])
 
   const price = selectedVariant ? parseFloat(selectedVariant.price) : 0
   const stock = selectedVariant?.stock ?? null
@@ -25,6 +46,21 @@ export function ProductDetail({ product }: ProductDetailProps) {
   const categoryName = product.categories?.[0]?.name?.es || ""
   const variantLabel = selectedVariant?.values?.map(v => v.es).join(" / ") || ""
   const mainImage = getProductMainImage(product)
+
+  // Parse HTML for Cuidados section
+  const rawDescription = product.description?.es || ""
+  const cuidadosMatch = rawDescription.match(/(?:<h[1-6]>|<p[^>]*>|<strong>|<br\s*\/?>\s*)?(?:Cuidados:?)(?:<\/h[1-6]>|<\/p>|<\/strong>|<br\s*\/?>)?/i)
+  
+  let mainDescription = rawDescription
+  let cuidadosHtml = ""
+  
+  if (cuidadosMatch && cuidadosMatch.index !== undefined) {
+    mainDescription = rawDescription.substring(0, cuidadosMatch.index)
+    // Extract everything after the exact matched tag/text
+    const matchedEndIndex = cuidadosMatch.index + cuidadosMatch[0].length
+    cuidadosHtml = rawDescription.substring(matchedEndIndex).trim()
+    // Clean up if there are any trailing unclosed tags or starting `<p>` leftovers if needed
+  }
 
   // Build sorted image list: main first
   const images = product.images.sort((a, b) => a.position - b.position).map(img => img.src)
@@ -60,50 +96,58 @@ export function ProductDetail({ product }: ProductDetailProps) {
         {/* Images */}
         <div className="space-y-4">
           {/* Main Image */}
-          <div 
-            className="relative aspect-square bg-secondary/30 overflow-hidden group/main"
-            style={{
-              backgroundImage: "url('/products-background-blue.png')",
-              backgroundSize: "cover",
-              backgroundPosition: "center"
-            }}
-          >
-            {images[selectedImage] ? (
-              <>
-                <Image
-                  src={images[selectedImage]}
-                  alt={product.name.es}
-                  fill
-                  className="object-cover"
-                  priority
-                />
+          <div className="relative group/main">
+            {images.length > 0 ? (
+              <Carousel setApi={setApi} opts={{ loop: true }} className="w-full">
+                <CarouselContent>
+                  {images.map((img, idx) => (
+                    <CarouselItem key={idx}>
+                      <div 
+                        className="relative aspect-4/5 w-full overflow-hidden bg-secondary/30 transition-all duration-500 ease-out border border-white/10"
+                        style={{
+                          backgroundImage: "url('/products-background-blue.png')",
+                          backgroundSize: "cover",
+                          backgroundPosition: "center"
+                        }}
+                      >
+                        <Image
+                          src={img}
+                          alt={`${product.name.es} - Imagen ${idx + 1}`}
+                          fill
+                          className="object-cover"
+                          priority={idx === 0}
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
                 
                 {/* Navigation Arrows */}
                 {images.length > 1 && (
                   <>
                     <button
-                      onClick={() => setSelectedImage((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center text-foreground hover:bg-background transition-all opacity-0 group-hover/main:opacity-100 focus:opacity-100"
+                      onClick={() => api?.scrollPrev()}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm border border-accent/20 flex items-center justify-center text-accent hover:bg-background hover:border-accent transition-all opacity-0 group-hover/main:opacity-100 focus:opacity-100 z-10"
                       aria-label="Imagen anterior"
                     >
                       <ChevronLeft className="w-6 h-6" />
                     </button>
                     <button
-                      onClick={() => setSelectedImage((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center text-foreground hover:bg-background transition-all opacity-0 group-hover/main:opacity-100 focus:opacity-100"
+                      onClick={() => api?.scrollNext()}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm border border-accent/20 flex items-center justify-center text-accent hover:bg-background hover:border-accent transition-all opacity-0 group-hover/main:opacity-100 focus:opacity-100 z-10"
                       aria-label="Siguiente imagen"
                     >
                       <ChevronRight className="w-6 h-6" />
                     </button>
                     
                     {/* Mini-map / Dots */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 px-3 py-1.5 rounded-full bg-black/20 backdrop-blur-[2px]">
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 px-3 py-1.5 rounded-full bg-black/20 backdrop-blur-[2px] z-10">
                       {images.map((_, idx) => (
                         <button
                           key={idx}
-                          onClick={() => setSelectedImage(idx)}
+                          onClick={() => api?.scrollTo(idx)}
                           className={`w-1.5 h-1.5 rounded-full transition-all ${
-                            selectedImage === idx ? "bg-white w-3" : "bg-white/50"
+                            selectedImage === idx ? "bg-accent w-3" : "bg-white/50 hover:bg-white"
                           }`}
                           aria-label={`Ir a imagen ${idx + 1}`}
                         />
@@ -111,9 +155,16 @@ export function ProductDetail({ product }: ProductDetailProps) {
                     </div>
                   </>
                 )}
-              </>
+              </Carousel>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              <div 
+                className="relative aspect-square bg-secondary/30 overflow-hidden flex items-center justify-center text-muted-foreground"
+                style={{
+                  backgroundImage: "url('/products-background-blue.png')",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center"
+                }}
+              >
                 <Package className="w-16 h-16" />
               </div>
             )}
@@ -121,13 +172,15 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
           {/* Thumbnails */}
           {images.length > 1 && (
-            <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2">
+            <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden">
               {images.map((img, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setSelectedImage(idx)}
-                  className={`relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 border-2 transition-colors ${
-                    selectedImage === idx ? "border-primary" : "border-transparent"
+                  onClick={() => api?.scrollTo(idx)}
+                  className={`relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 border-2 transition-all duration-300 ${
+                    selectedImage === idx 
+                      ? "border-primary opacity-100" 
+                      : "border-transparent opacity-50 hover:opacity-100"
                   }`}
                   style={{
                     backgroundImage: "url('/products-background-blue.png')",
@@ -145,6 +198,11 @@ export function ProductDetail({ product }: ProductDetailProps) {
               ))}
             </div>
           )}
+
+          {/* Desktop Accordion (Left Column) */}
+          <div className="hidden lg:block pt-4">
+            <ProductAccordion cuidadosHtml={cuidadosHtml} />
+          </div>
         </div>
 
         {/* Product Info */}
@@ -167,10 +225,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
           </div>
 
           {/* Description */}
-          {product.description?.es && (
+          {mainDescription && (
             <div
               className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8 leading-relaxed prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: product.description.es }}
+              dangerouslySetInnerHTML={{ __html: mainDescription }}
             />
           )}
 
@@ -225,7 +283,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
               >
                 <Minus className="w-4 h-4" />
               </button>
-              <span className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-medium min-w-[3rem] text-center">
+              <span className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-medium min-w-12 text-center">
                 {quantity}
               </span>
               <button
@@ -268,6 +326,11 @@ export function ProductDetail({ product }: ProductDetailProps) {
               <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5 text-primary mb-1 sm:mb-2" />
               <span className="text-[10px] sm:text-xs text-muted-foreground">Cambios y devoluciones</span>
             </div>
+          </div>
+
+          {/* Mobile Accordion (Right Column alternative) */}
+          <div className="lg:hidden">
+            <ProductAccordion cuidadosHtml={cuidadosHtml} />
           </div>
         </div>
       </div>

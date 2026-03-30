@@ -47,6 +47,9 @@ export async function GET() {
           date: data.date || "",
           readTime: data.readTime || "",
           status: data.status || "draft",
+          metaTitle: data.metaTitle || "",
+          metaDescription: data.metaDescription || "",
+          keywords: data.keywords || "",
         };
       })
     );

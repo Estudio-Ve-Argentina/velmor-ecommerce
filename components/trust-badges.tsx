@@ -1,35 +1,35 @@
-import { ShieldCheck, Truck, CreditCard } from "lucide-react"
-import { PaperTexture } from "@/components/paper-texture"
+import { ShieldCheck, Truck, CreditCard } from "lucide-react";
+import { PaperTexture } from "@/components/paper-texture";
 
 const badges = [
   {
     icon: ShieldCheck,
     title: "Compra Segura",
-    description: "Todos tus datos protegidos con encriptación SSL"
+    description: "Todos tus datos protegidos con encriptación SSL",
   },
   {
     icon: Truck,
     title: "Envíos a Todo el País",
-    description: "Entrega rápida y segura a cualquier destino"
+    description: "Entrega rápida y segura a cualquier destino",
   },
   {
     icon: CreditCard,
     title: "Múltiples Medios de Pago",
-    description: "Tarjetas, transferencia y más opciones"
-  }
-]
+    description: "Tarjetas, transferencia y más opciones",
+  },
+];
 
 export function TrustBadges() {
   return (
-    <section className="relative py-16 border-y border-border">
+    <section className="relative py-16">
       {/* Paper texture background */}
-      <PaperTexture className="opacity-50" />
-      <div className="absolute inset-0 bg-secondary/30" />
-      
+      <PaperTexture className="opacity-80" />
+      <div className="absolute inset-0" />
+
       <div className="relative z-10 max-w-7xl mx-auto px-6">
         <div className="grid md:grid-cols-3 gap-8">
           {badges.map((badge, index) => (
-            <div 
+            <div
               key={index}
               className="flex items-center gap-4 justify-center md:justify-start"
             >
@@ -49,5 +49,5 @@ export function TrustBadges() {
         </div>
       </div>
     </section>
-  )
+  );
 }

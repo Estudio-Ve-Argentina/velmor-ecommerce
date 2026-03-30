@@ -30,6 +30,7 @@ import {
   Check,
   PlusCircle,
   Target,
+  Box,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +39,7 @@ import { formatPrice } from "@/lib/tiendanube";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Tab = "dashboard" | "orders" | "stock" | "finance" | "campaigns" | "wiki" | "blogs";
+type Tab = "dashboard" | "orders" | "stock" | "supplies" | "finance" | "campaign" | "wiki" | "blogs" | "faqs";
 
 interface StockVariant {
   id: number;
@@ -277,6 +278,41 @@ export default function AdminPage() {
     date: new Date().toISOString().split("T")[0],
     status: "draft",
     readTime: "5 min",
+    metaTitle: "",
+    metaDescription: "",
+    keywords: "",
+  });
+
+  // FAQ state
+  const [showFaqModal, setShowFaqModal] = useState(false);
+  const [editingFaq, setEditingFaq] = useState<any>(null);
+  const [faqForm, setFaqForm] = useState({
+    question: "",
+    answer: "",
+    category: "General",
+    order: 0,
+    metaTitle: "",
+    metaDescription: "",
+    keywords: ""
+  });
+
+  // Supplies state
+  const [showSupplyModal, setShowSupplyModal] = useState(false);
+  const [editingSupply, setEditingSupply] = useState<any>(null);
+  const [supplyForm, setSupplyForm] = useState({
+    name: "",
+    quantity: 0,
+    minQuantity: 0,
+    unit: "unidades",
+    notes: ""
+  });
+
+  // Finance Settings State
+  const [isEditingSettings, setIsEditingSettings] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({
+    pasarelaFee: 8.5,
+    packagingCost: 0,
+    shippingCost: 0
   });
 
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -312,6 +348,27 @@ export default function AdminPage() {
     fetcher
   );
 
+  const { data: faqsData, mutate: refreshFaqs } = useSWR(
+    isAuthenticated ? "/api/admin/faqs" : null,
+    fetcher
+  );
+
+  const { data: suppliesData, mutate: refreshSupplies } = useSWR(
+    isAuthenticated ? "/api/admin/supplies" : null,
+    fetcher
+  );
+
+  const { data: settingsData, mutate: refreshSettings } = useSWR(
+    isAuthenticated ? "/api/admin/settings" : null,
+    fetcher
+  );
+
+  useEffect(() => {
+    if (settingsData?.settings) {
+      setSettingsForm(settingsData.settings);
+    }
+  }, [settingsData]);
+
   // ── Derived data ──────────────────────────────────────────────────────────
 
   const orders = ordersData?.orders || [];
@@ -340,6 +397,9 @@ export default function AdminPage() {
   );
 
   const blogsList = blogsData?.posts || [];
+  const faqsList = faqsData?.faqs || [];
+  const suppliesList = suppliesData?.supplies || [];
+  const financeSettings = settingsData?.settings || { pasarelaFee: 8.5, packagingCost: 0, shippingCost: 0 };
 
   // ── Auth handlers ─────────────────────────────────────────────────────────
 
@@ -507,6 +567,9 @@ export default function AdminPage() {
           date: data.post.frontmatter.date || new Date().toISOString().split("T")[0],
           status: data.post.frontmatter.status || "draft",
           readTime: data.post.frontmatter.readTime || "5 min",
+          metaTitle: data.post.frontmatter.metaTitle || "",
+          metaDescription: data.post.frontmatter.metaDescription || "",
+          keywords: data.post.frontmatter.keywords || "",
         });
         setIsEditingBlog(true);
       }
@@ -523,6 +586,9 @@ export default function AdminPage() {
         date: new Date().toISOString().split("T")[0],
         status: "draft",
         readTime: "5 min",
+        metaTitle: "",
+        metaDescription: "",
+        keywords: "",
       });
       setIsEditingBlog(true);
     }
@@ -552,6 +618,9 @@ export default function AdminPage() {
           date: blogForm.date,
           status: blogForm.status,
           readTime: blogForm.readTime,
+          metaTitle: blogForm.metaTitle,
+          metaDescription: blogForm.metaDescription,
+          keywords: blogForm.keywords,
         }
       }),
     });
@@ -567,6 +636,68 @@ export default function AdminPage() {
     if (!window.confirm("¿Seguro que deseas eliminar este artículo?")) return;
     await fetch(`/api/admin/blogs/${slug}`, { method: "DELETE" });
     refreshBlogs();
+  };
+
+  // ── FAQ handlers ────────────────────────────────────────────────────────
+
+  const saveFaq = async () => {
+    const data = editingFaq ? { ...faqForm, id: editingFaq.id } : faqForm;
+    await fetch("/api/admin/faqs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    refreshFaqs();
+    setShowFaqModal(false);
+    setEditingFaq(null);
+    setFaqForm({ question: "", answer: "", category: "General", order: 0, metaTitle: "", metaDescription: "", keywords: "" });
+  };
+
+  const deleteFaq = async (id: string) => {
+    if (!window.confirm("¿Seguro que deseas eliminar esta FAQ?")) return;
+    await fetch("/api/admin/faqs", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    refreshFaqs();
+  };
+
+  // ── Supplies handlers ───────────────────────────────────────────────────
+
+  const saveSupply = async () => {
+    const data = editingSupply ? { ...supplyForm, id: editingSupply.id } : supplyForm;
+    await fetch("/api/admin/supplies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    refreshSupplies();
+    setShowSupplyModal(false);
+    setEditingSupply(null);
+    setSupplyForm({ name: "", quantity: 0, minQuantity: 0, unit: "unidades", notes: "" });
+  };
+
+  const deleteSupply = async (id: string) => {
+    if (!window.confirm("¿Seguro que deseas eliminar este insumo?")) return;
+    await fetch("/api/admin/supplies", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    refreshSupplies();
+  };
+
+  // ── Finance handlers ───────────────────────────────────────────────────
+
+  const saveFinanceSettings = async () => {
+    await fetch("/api/admin/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(settingsForm),
+    });
+    refreshSettings();
+    setIsEditingSettings(false);
   };
 
   // ── Render: Loading ───────────────────────────────────────────────────────
@@ -621,9 +752,10 @@ export default function AdminPage() {
     { id: "orders", label: "Pedidos", icon: <ShoppingCart className="w-4 h-4" /> },
     { id: "stock", label: "Inventario", icon: <Package className="w-4 h-4" /> },
     { id: "finance", label: "Finanzas", icon: <DollarSign className="w-4 h-4" /> },
-    { id: "campaigns", label: "Campañas", icon: <Megaphone className="w-4 h-4" /> },
+    { id: "campaign", label: "Campañas", icon: <Megaphone className="w-4 h-4" /> },
     { id: "wiki", label: "Wiki", icon: <BookOpen className="w-4 h-4" /> },
     { id: "blogs", label: "Blog", icon: <Edit3 className="w-4 h-4" /> },
+    { id: "faqs", label: "FAQs", icon: <MessageCircle className="w-4 h-4" /> },
   ];
 
   // ── Render: Dashboard ─────────────────────────────────────────────────────
@@ -929,11 +1061,58 @@ export default function AdminPage() {
               <StatCard icon={<Target className="w-5 h-5" />} label="Inversión Ads" value={formatPrice(thisMonthAdsSpend)} color="amber" />
             </div>
 
+            {/* Global Cost Settings */}
+            <div className="bg-card border border-border rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-semibold text-lg flex items-center gap-2"><DollarSign className="w-4 h-4 text-primary" /> Configuración Global de Costos</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Estos valores se usarán para calcular el margen neto real de todos los productos.</p>
+                </div>
+                {!isEditingSettings ? (
+                  <Button size="sm" variant="outline" onClick={() => setIsEditingSettings(true)}>Configurar</Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => { setIsEditingSettings(false); setSettingsForm(financeSettings); }}>Cancelar</Button>
+                    <Button size="sm" onClick={saveFinanceSettings}>Guardar</Button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-secondary/20 rounded p-3 border border-border">
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground block mb-2">Comisión Pasarela (TN/MercadoPago)</span>
+                  {isEditingSettings ? (
+                    <div className="flex items-center gap-2"><Input type="number" step="0.1" value={settingsForm.pasarelaFee} onChange={e => setSettingsForm({...settingsForm, pasarelaFee: parseFloat(e.target.value) || 0})} className="w-24 text-center h-8" /> <span className="text-sm">%</span></div>
+                  ) : (
+                    <span className="text-lg font-semibold">{financeSettings.pasarelaFee}%</span>
+                  )}
+                </div>
+                <div className="bg-secondary/20 rounded p-3 border border-border">
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground block mb-2">Costo Promedio Packaging</span>
+                  {isEditingSettings ? (
+                    <div className="flex items-center gap-2"><span className="text-sm">$</span> <Input type="number" value={settingsForm.packagingCost} onChange={e => setSettingsForm({...settingsForm, packagingCost: parseFloat(e.target.value) || 0})} className="w-full h-8" /></div>
+                  ) : (
+                    <span className="text-lg font-semibold">{formatPrice(financeSettings.packagingCost)}</span>
+                  )}
+                </div>
+                <div className="bg-secondary/20 rounded p-3 border border-border">
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground block mb-2">Flete/Costo Envío (Si lo asumes)</span>
+                  {isEditingSettings ? (
+                    <div className="flex items-center gap-2"><span className="text-sm">$</span> <Input type="number" value={settingsForm.shippingCost} onChange={e => setSettingsForm({...settingsForm, shippingCost: parseFloat(e.target.value) || 0})} className="w-full h-8" /></div>
+                  ) : (
+                    <span className="text-lg font-semibold">{formatPrice(financeSettings.shippingCost)}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Product costs table */}
             <div className="bg-card border border-border rounded-lg">
-              <div className="p-4 border-b border-border">
-                <h3 className="font-semibold">Costos de Producción por Producto</h3>
-                <p className="text-xs text-muted-foreground mt-1">Asigna costos para calcular el margen real de ganancia</p>
+              <div className="p-4 border-b border-border flex justify-between items-center">
+                <div>
+                  <h3 className="font-semibold">Costos de Producción por Producto</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Ingresa el costo de fábrica de cada producto.</p>
+                </div>
               </div>
               {stockLoading ? (
                 <div className="flex justify-center py-8"><Spinner className="w-5 h-5" /></div>
@@ -944,8 +1123,10 @@ export default function AdminPage() {
                   {products.map((product) => {
                     const variantPrice = parseFloat(product.variants[0]?.price || "0");
                     const cost = productCosts[product.id] || 0;
-                    const platformFee = variantPrice * 0.085; // ~8.5% Tienda Nube
-                    const margin = variantPrice - cost - platformFee;
+                    const platformFee = variantPrice * (financeSettings.pasarelaFee / 100);
+                    const fixedCosts = Number(financeSettings.packagingCost) + Number(financeSettings.shippingCost);
+                    
+                    const margin = variantPrice - cost - platformFee - fixedCosts;
                     const marginPct = variantPrice > 0 ? (margin / variantPrice) * 100 : 0;
                     const isEditing = editingCost === String(product.id);
 
@@ -1041,7 +1222,7 @@ export default function AdminPage() {
         )}
 
         {/* ── CAMPAIGNS ───────────────────────────────────────────────── */}
-        {activeTab === "campaigns" && (
+        {activeTab === "campaign" && (
           <div>
             <SectionHeader
               title="Campañas y Lanzamientos"
@@ -1271,6 +1452,29 @@ export default function AdminPage() {
                         )}
                       </div>
                     </div>
+
+                    <div className="bg-card border border-border rounded-lg p-6">
+                      <h3 className="font-semibold mb-4 border-b border-border pb-2">SEO Avanzado</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-xs text-muted-foreground uppercase mb-1 block">Meta Título</label>
+                          <Input value={blogForm.metaTitle} onChange={(e) => setBlogForm({ ...blogForm, metaTitle: e.target.value })} placeholder="Título para Google (aprox 60 caracteres)" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground uppercase mb-1 block">Meta Descripción</label>
+                          <textarea
+                            value={blogForm.metaDescription}
+                            onChange={(e) => setBlogForm({ ...blogForm, metaDescription: e.target.value })}
+                            placeholder="Descripción para Google (aprox 150 caracteres)..."
+                            className="w-full h-20 border border-border rounded-lg p-3 text-sm bg-background resize-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground uppercase mb-1 block">Palabras Clave (Keywords)</label>
+                          <Input value={blogForm.keywords} onChange={(e) => setBlogForm({ ...blogForm, keywords: e.target.value })} placeholder="Ej: cuero premium, billetera hombre, regalo" />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1278,6 +1482,119 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+
+      {/* ── FAQS ─────────────────────────────────────────────────────── */}
+      {activeTab === "faqs" && (
+        <main className="max-w-7xl mx-auto px-4 py-6">
+          <SectionHeader
+            title="Gestor de Preguntas Frecuentes (SEO)"
+            action={
+              <Button size="sm" onClick={() => { setEditingFaq(null); setFaqForm({ question: "", answer: "", category: "General", order: 0, metaTitle: "", metaDescription: "", keywords: "" }); setShowFaqModal(true); }}>
+                <PlusCircle className="w-4 h-4 mr-1" />
+                Nueva FAQ
+              </Button>
+            }
+          />
+          {faqsList.length === 0 ? (
+            <div className="bg-card border border-border rounded-lg py-16 text-center text-muted-foreground">
+              <MessageCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">No hay preguntas frecuentes configuradas</p>
+              <p className="text-xs mt-1">Crea tu primera FAQ para ayudar a tus clientes</p>
+            </div>
+          ) : (
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="divide-y divide-border">
+                {faqsList.map((faq: any) => (
+                  <div key={faq.id} className="p-4 flex items-center justify-between gap-4">
+                    <div>
+                      <h3 className="font-medium text-sm text-foreground">{faq.question}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{faq.category} · Orden: {faq.order}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => { setEditingFaq(faq); setFaqForm({ ...faq }); setShowFaqModal(true); }}>Editar</Button>
+                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteFaq(faq.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </main>
+      )}
+
+      {/* ── INSUMOS ──────────────────────────────────────────────────── */}
+      {activeTab === "supplies" && (
+        <main className="max-w-7xl mx-auto px-4 py-6">
+          <SectionHeader
+            title="Inventario de Insumos (No-Productos)"
+            action={
+              <Button size="sm" onClick={() => { setEditingSupply(null); setSupplyForm({ name: "", quantity: 0, minQuantity: 0, unit: "unidades", notes: "" }); setShowSupplyModal(true); }}>
+                <PlusCircle className="w-4 h-4 mr-1" />
+                Nuevo Insumo
+              </Button>
+            }
+          />
+          {suppliesList.length === 0 ? (
+            <div className="bg-card border border-border rounded-lg py-16 text-center text-muted-foreground">
+              <Box className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">No hay insumos registrados</p>
+              <p className="text-xs mt-1">Registra bolsas, paños, cajas, etc.</p>
+            </div>
+          ) : (
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-secondary/50 text-xs uppercase text-muted-foreground border-b border-border">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Insumo</th>
+                    <th className="px-4 py-3 font-medium">Stock Actual</th>
+                    <th className="px-4 py-3 font-medium">Stock Mínimo</th>
+                    <th className="px-4 py-3 font-medium">Estado</th>
+                    <th className="px-4 py-3 text-right font-medium">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {suppliesList.map((supply: any) => {
+                    const isLowStock = supply.quantity <= supply.minQuantity;
+                    return (
+                      <tr key={supply.id} className="hover:bg-muted/50 transition-colors">
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {supply.name}
+                          {supply.notes && <p className="text-xs text-muted-foreground mt-0.5">{supply.notes}</p>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`font-medium ${isLowStock ? 'text-destructive' : ''}`}>{supply.quantity}</span> {supply.unit}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">{supply.minQuantity} {supply.unit}</td>
+                        <td className="px-4 py-3">
+                          {isLowStock ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20">
+                              Reponer
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-500/10 text-green-600 border border-green-500/20">
+                              OK
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button variant="ghost" size="sm" onClick={() => { setEditingSupply(supply); setSupplyForm({ ...supply }); setShowSupplyModal(true); }}>
+                            Editar
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive ml-2" onClick={() => deleteSupply(supply.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </main>
+      )}
 
       {/* ── MODALS ────────────────────────────────────────────────────── */}
 
@@ -1460,6 +1777,158 @@ export default function AdminPage() {
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" onClick={() => setShowWikiModal(false)}>Cancelar</Button>
                 <Button className="flex-1" onClick={saveWiki}>Guardar</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* FAQ Modal */}
+      {showFaqModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-lg p-6 w-full max-w-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
+              <h3 className="font-serif font-semibold text-lg">{editingFaq ? "Editar FAQ" : "Nueva FAQ"}</h3>
+              <button onClick={() => setShowFaqModal(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Pregunta</label>
+                  <Input value={faqForm.question} onChange={(e) => setFaqForm({ ...faqForm, question: e.target.value })} placeholder="Ej: ¿Cuánto tarda el envío?" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Categoría</label>
+                  <Input value={faqForm.category} onChange={(e) => setFaqForm({ ...faqForm, category: e.target.value })} placeholder="Ej: Envíos, Pagos..." />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Respuesta</label>
+                <textarea
+                  value={faqForm.answer}
+                  onChange={(e) => setFaqForm({ ...faqForm, answer: e.target.value })}
+                  className="w-full h-24 border border-border rounded-lg p-3 text-sm bg-background resize-none"
+                  placeholder="Respuesta detallada..."
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Orden de aparición</label>
+                <Input type="number" value={faqForm.order} onChange={(e) => setFaqForm({ ...faqForm, order: parseInt(e.target.value) || 0 })} className="w-24" />
+              </div>
+              
+              <div className="pt-4 border-t border-border mt-4">
+                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2"><Target className="w-4 h-4"/> SEO Metadata</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground uppercase tracking-wide">Meta Title (Opcional)</label>
+                    <Input value={faqForm.metaTitle} onChange={(e) => setFaqForm({ ...faqForm, metaTitle: e.target.value })} placeholder="Título para buscadores" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground uppercase tracking-wide">Meta Description (Opcional)</label>
+                    <textarea
+                      value={faqForm.metaDescription}
+                      onChange={(e) => setFaqForm({ ...faqForm, metaDescription: e.target.value })}
+                      className="w-full h-16 border border-border rounded px-3 py-2 text-sm bg-background resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground uppercase tracking-wide">Keywords (separadas por coma)</label>
+                    <Input value={faqForm.keywords} onChange={(e) => setFaqForm({ ...faqForm, keywords: e.target.value })} placeholder="cuero, envio gratis, cuotas..." />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button variant="outline" className="flex-1" onClick={() => setShowFaqModal(false)}>Cancelar</Button>
+                <Button className="flex-1" onClick={saveFaq}>Guardar FAQ</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Supply Modal */}
+      {showSupplyModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-lg p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
+              <h3 className="font-serif font-semibold text-lg">{editingSupply ? "Editar Insumo" : "Nuevo Insumo"}</h3>
+              <button onClick={() => setShowSupplyModal(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
+            </div>
+            <div className="space-y-4 pt-2">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Nombre del Insumo</label>
+                <Input value={supplyForm.name} onChange={(e) => setSupplyForm({ ...supplyForm, name: e.target.value })} placeholder="Paños, Cajas, Tarjetas..." />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Stock Actual</label>
+                  <Input type="number" value={supplyForm.quantity} onChange={(e) => setSupplyForm({ ...supplyForm, quantity: parseInt(e.target.value) || 0 })} min={0} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Stock Mínimo</label>
+                  <Input type="number" value={supplyForm.minQuantity} onChange={(e) => setSupplyForm({ ...supplyForm, minQuantity: parseInt(e.target.value) || 0 })} min={0} />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Unidad de medida</label>
+                <select value={supplyForm.unit} onChange={(e) => setSupplyForm({ ...supplyForm, unit: e.target.value })} className="w-full h-10 border border-border rounded px-3 text-sm bg-background">
+                  <option value="unidades">Unidades</option>
+                  <option value="metros">Metros</option>
+                  <option value="cajas">Cajas</option>
+                  <option value="rollos">Rollos</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Notas (Opcional)</label>
+                <Input value={supplyForm.notes} onChange={(e) => setSupplyForm({ ...supplyForm, notes: e.target.value })} placeholder="Ej: Pedir al proveedor X..." />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => setShowSupplyModal(false)}>Cancelar</Button>
+                <Button className="flex-1" onClick={saveSupply}>Guardar Insumo</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Supply Modal */}
+      {showSupplyModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-lg p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
+              <h3 className="font-serif font-semibold text-lg">{editingSupply ? "Editar Insumo" : "Nuevo Insumo"}</h3>
+              <button onClick={() => setShowSupplyModal(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
+            </div>
+            <div className="space-y-4 pt-2">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Nombre del Insumo</label>
+                <Input value={supplyForm.name} onChange={(e) => setSupplyForm({ ...supplyForm, name: e.target.value })} placeholder="Paños, Cajas, Tarjetas..." />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Stock Actual</label>
+                  <Input type="number" value={supplyForm.quantity} onChange={(e) => setSupplyForm({ ...supplyForm, quantity: parseInt(e.target.value) || 0 })} min={0} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Stock Mínimo</label>
+                  <Input type="number" value={supplyForm.minQuantity} onChange={(e) => setSupplyForm({ ...supplyForm, minQuantity: parseInt(e.target.value) || 0 })} min={0} />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Unidad de medida</label>
+                <select value={supplyForm.unit} onChange={(e) => setSupplyForm({ ...supplyForm, unit: e.target.value })} className="w-full h-10 border border-border rounded px-3 text-sm bg-background">
+                  <option value="unidades">Unidades</option>
+                  <option value="metros">Metros</option>
+                  <option value="cajas">Cajas</option>
+                  <option value="rollos">Rollos</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider mb-2 block">Notas (Opcional)</label>
+                <Input value={supplyForm.notes} onChange={(e) => setSupplyForm({ ...supplyForm, notes: e.target.value })} placeholder="Ej: Pedir al proveedor X..." />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => setShowSupplyModal(false)}>Cancelar</Button>
+                <Button className="flex-1" onClick={saveSupply}>Guardar Insumo</Button>
               </div>
             </div>
           </div>

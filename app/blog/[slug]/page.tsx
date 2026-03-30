@@ -31,12 +31,16 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     }
   }
 
+  const seoTitle = post.metaTitle || `${post.title} | Blog VELMOR`
+  const seoDescription = post.metaDescription || post.excerpt
+
   return {
-    title: `${post.title} | Blog VELMOR`,
-    description: post.excerpt,
+    title: seoTitle,
+    description: seoDescription,
+    keywords: post.keywords ? post.keywords.split(',').map(k => k.trim()) : undefined,
     openGraph: {
-      title: post.title,
-      description: post.excerpt,
+      title: seoTitle,
+      description: seoDescription,
       images: [post.image],
       type: "article",
       publishedTime: post.date,

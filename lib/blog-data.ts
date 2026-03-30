@@ -13,6 +13,9 @@ export interface BlogPost {
   author: string;
   date: string;
   readTime: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  keywords?: string;
 }
 
 async function getBlogDir() {
@@ -47,6 +50,9 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
           author: data.author || "Admin",
           date: data.date || new Date().toISOString().split('T')[0],
           readTime: data.readTime || "5 min",
+          metaTitle: data.metaTitle || "",
+          metaDescription: data.metaDescription || "",
+          keywords: data.keywords || "",
           content: content,
         } as BlogPost;
       })

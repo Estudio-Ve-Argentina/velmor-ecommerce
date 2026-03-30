@@ -56,14 +56,17 @@ export function CartDrawer() {
         }),
       });
       const data = await res.json();
-      if (data.success && data.checkoutUrl) {
-        window.open(data.checkoutUrl, "_blank");
+      
+      if (res.ok && data.success && data.checkoutUrl) {
+        // Redirect user to the secure Checkout from Tiendanube
+        window.location.href = data.checkoutUrl;
       } else {
-        // Fallback: open store directly
-        window.open(process.env.NEXT_PUBLIC_TIENDANUBE_STORE_URL || "https://velmor.mitiendanube.com", "_blank");
+        console.error("Error from checkout API:", data);
+        alert("Ocurrió un error al procesar tu carrito. Por favor, intenta de nuevo.");
       }
-    } catch {
-      window.open(process.env.NEXT_PUBLIC_TIENDANUBE_STORE_URL || "https://velmor.mitiendanube.com", "_blank");
+    } catch (error) {
+      console.error("Error submitting checkout:", error);
+      alert("Error de conexión. Revisa tu internet y vuelve a intentar.");
     } finally {
       setIsCheckingOut(false);
     }

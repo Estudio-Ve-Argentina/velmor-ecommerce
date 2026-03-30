@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const STORE_URL = process.env.NEXT_PUBLIC_TIENDANUBE_STORE_URL || "https://velmor.mitiendanube.com";
+const STORE_ID = process.env.TIENDANUBE_STORE_ID;
+const ACCESS_TOKEN = process.env.TIENDANUBE_ACCESS_TOKEN;
 
 /**
- * Creates a checkout session in Tienda Nube and returns the redirect URL.
+ * Creates a draft order in Tienda Nube and returns the redirect checkout URL.
  * POST /api/tiendanube/checkout
  * Body: { items: [{ variantId: number, quantity: number }] }
  */
@@ -16,32 +17,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No items provided" }, { status: 400 });
     }
 
-    // Tienda Nube checkout add URL format for a single item:
-    // {storeUrl}/checkout/add/{variantId}/{quantity}
-    // 
-    // For multiple items, Tienda Nube supports a cart param format:
-    // {storeUrl}/checkout/add?cart={variantId}:{qty},{variantId}:{qty}
-    // However this format varies by TN version. The most reliable approach
-    // is to build a URL for the first item only, or use TN's cart API.
-    //
-    // We'll use the API to create a draft order / checkout if possible,
-    // or fall back to the add-to-cart URL for multiple items using the
-    // proper comma-separated format TN supports.
-
-    let checkoutUrl: string;
-
-    if (items.length === 1) {
-      const { variantId, quantity } = items[0];
-      checkoutUrl = `${STORE_URL}/checkout/v3/start/${variantId}/${quantity}`;
-    } else {
-      // Multi-item format: /checkout/v3/start/cart/variantId:qty,variantId:qty
-      const cartParam = items
-        .map((item) => `${item.variantId}:${item.quantity}`)
-        .join(",");
-      checkoutUrl = `${STORE_URL}/checkout/v3/start/cart/${cartParam}`;
+    if (!STORE_ID || !ACCESS_TOKEN) {
+      console.error("Missing Tiendanube API credentials in environment.");
+      return NextResponse.json({ error: "Configuración de API faltante" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, checkoutUrl });
+    // Build the payload for the Draft Orders API
+    const products = items.map((item) => ({
+      variant_id: item.variantId,
+      quantity: item.quantity,
+    }));
+
+    const draftOrderPayload = {
+      contact_email: "comprador@velmor.com",
+      contact_name: "Cliente",
+      contact_lastname: "Invitado",
+      products,
+    };
+
+    // Request against Tiendanube API
+    const response = await fetch(`https://api.tiendanube.com/v1/${STORE_ID}/draft_orders`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authentication: `bearer ${ACCESS_TOKEN}`,
+        "User-Agent": "Velmor (velmor@velmor.com)",
+      },
+      body: JSON.stringify(draftOrderPayload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Tiendanube API Error:", response.status, errorText);
+      return NextResponse.json(
+        { error: "Error de Tiendanube al crear la orden", details: errorText },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+
+    // From Draft Orders response we extract the `checkout_url`
+    if (data.checkout_url) {
+      return NextResponse.json({ success: true, checkoutUrl: data.checkout_url });
+    } else {
+      console.error("No checkout_url in Tiendanube response", data);
+      return NextResponse.json({ error: "Respuesta inesperada de Tiendanube" }, { status: 500 });
+    }
   } catch (error) {
     console.error("Error creating checkout:", error);
     return NextResponse.json(

@@ -1,13 +1,13 @@
-import { PaperTexture } from "@/components/paper-texture"
-import { ProductsGrid } from "@/components/products-grid"
+import { PaperTexture } from "@/components/paper-texture";
+import { ProductsGrid } from "@/components/products-grid";
 
 export function ProductsSection() {
   return (
-    <section id="productos" className="relative py-16 sm:py-24">
+    <section id="productos" className="relative py-16 sm:py-16">
       {/* Paper texture background */}
       <PaperTexture className="opacity-40" />
       <div className="absolute inset-0 bg-secondary/20" />
-      
+
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
         {/* Section Header */}
         <div className="text-center mb-10 sm:mb-16">
@@ -26,5 +26,5 @@ export function ProductsSection() {
         <ProductsGrid limit={8} />
       </div>
     </section>
-  )
+  );
 }

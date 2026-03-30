@@ -14,9 +14,24 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+let app;
+let auth: any = null;
+let db: any = null;
+let storage: any = null;
+
+const isConfigValid = !!firebaseConfig.apiKey && firebaseConfig.apiKey !== "undefined";
+
+if (isConfigValid) {
+  try {
+    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+  } catch (error) {
+    console.error("Firebase initialization error:", error);
+  }
+} else {
+  console.warn("Firebase is not configured. Some features may not work.");
+}
 
 export { app, auth, db, storage };

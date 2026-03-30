@@ -1,8 +1,9 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ShoppingBag, Eye, Package } from "lucide-react"
+import { ShoppingBag, Eye, Package, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCartStore } from "@/lib/cart-store"
 import { getProductMainImage, getProductStock, isInStock, formatPrice, type TiendaNubeProduct } from "@/lib/tiendanube"
@@ -14,7 +15,11 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem)
   const defaultVariant = product.variants[0]
-  const mainImage = getProductMainImage(product)
+  const [imageIndex, setImageIndex] = useState(0)
+  
+  const images = product.images?.sort((a, b) => a.position - b.position).map(img => img.src).slice(0, 3) || []
+  const hasMultipleImages = images.length > 1
+  const currentImage = images[imageIndex] || getProductMainImage(product)
   const stock = getProductStock(product)
   const inStock = isInStock(product)
   const price = defaultVariant ? parseFloat(defaultVariant.price) : 0
@@ -32,27 +37,43 @@ export function ProductCard({ product }: ProductCardProps) {
       name: product.name.es,
       variantName: variantLabel,
       price,
-      image: mainImage,
+      image: currentImage,
       maxStock: defaultVariant.stock,
       quantity: 1,
     })
   }
 
+  const nextImage = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (images.length) {
+      setImageIndex((prev) => (prev + 1) % images.length)
+    }
+  }
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (images.length) {
+      setImageIndex((prev) => (prev - 1 + images.length) % images.length)
+    }
+  }
+
   return (
-    <article className="group relative bg-card border border-border/50 hover:border-accent/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 rounded-sm overflow-hidden">
+    <article className="group relative bg-card border border-[#D4AF37]/15 hover:border-[#D4AF37]/40 hover:shadow-[0_8px_30px_rgba(212,175,55,0.12),0_2px_8px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-500 rounded-sm overflow-hidden">
       {/* Product Image */}
       <Link href={`/productos/${slug}`} className="block">
         <div 
-          className="relative aspect-[3/4] overflow-hidden bg-secondary/30"
+          className="relative aspect-3/4 overflow-hidden bg-secondary/30"
           style={{
             backgroundImage: "url('/products-background-blue.png')",
             backgroundSize: "cover",
             backgroundPosition: "center"
           }}
         >
-          {mainImage ? (
+          {currentImage ? (
             <Image
-              src={mainImage}
+              src={currentImage}
               alt={product.name.es}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-700"
@@ -103,6 +124,26 @@ export function ProductCard({ product }: ProductCardProps) {
               </Button>
             </div>
           </div>
+
+          {/* Image Navigation Arrows */}
+          {hasMultipleImages && (
+            <>
+              <button
+                onClick={prevImage}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm border border-accent/20 flex items-center justify-center text-accent hover:bg-background hover:text-accent hover:border-accent transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 z-20"
+                aria-label="Imagen anterior"
+              >
+                <ChevronLeft className="w-5 h-5 -ml-0.5" />
+              </button>
+              <button
+                onClick={nextImage}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm border border-accent/20 flex items-center justify-center text-accent hover:bg-background hover:text-accent hover:border-accent transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 z-20"
+                aria-label="Siguiente imagen"
+              >
+                <ChevronRight className="w-5 h-5 ml-0.5" />
+              </button>
+            </>
+          )}
         </div>
       </Link>
 
